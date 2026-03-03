@@ -17,6 +17,7 @@ export type ParameterTableEvent =
   | { type: "parameterRemoved" }
   | { type: "levelAdded" }
   | { type: "levelRemoved" }
+  | { type: "definitionShapeChanged"; parameterCount: number; levelCount: number }
   | { type: "tableReset"; rows: ParameterRow[] }
   | { type: "definitionSelected"; definitionId: string }
 
@@ -87,7 +88,7 @@ export function parameterTableReducer(
         ...state.rows,
         {
           id: `parameter-${Date.now()}-${nextParameterNumber}`,
-          parameter: `Parameter ${nextParameterNumber}`,
+          parameter: `Param ${nextParameterNumber}`,
           levels: Array.from({ length: levelCount }, () => ""),
         },
       ],
@@ -127,6 +128,44 @@ export function parameterTableReducer(
       ...state,
       visibleLevelCount:
         state.visibleLevelCount <= 1 ? state.visibleLevelCount : state.visibleLevelCount - 1,
+    }
+  }
+
+  if (event.type === "definitionShapeChanged") {
+    const visibleParameterCount = Math.max(1, event.parameterCount)
+    const visibleLevelCount = Math.max(1, event.levelCount)
+    const storedParameterCount = Math.max(state.rows.length, visibleParameterCount)
+    const currentStoredLevelCount = Math.max(
+      state.rows[0]?.levels.length ?? 0,
+      state.visibleLevelCount
+    )
+    const storedLevelCount = Math.max(currentStoredLevelCount, visibleLevelCount)
+
+    const rows = Array.from({ length: storedParameterCount }, (_, rowIndex) => {
+      const existingRow = state.rows[rowIndex]
+
+      if (!existingRow) {
+        return {
+          id: `parameter-${Date.now()}-${rowIndex + 1}`,
+          parameter: `Param ${rowIndex + 1}`,
+          levels: Array.from({ length: storedLevelCount }, () => ""),
+        }
+      }
+
+      return {
+        ...existingRow,
+        levels: Array.from(
+          { length: storedLevelCount },
+          (_, levelIndex) => existingRow.levels[levelIndex] ?? ""
+        ),
+      }
+    })
+
+    return {
+      ...state,
+      rows,
+      visibleParameterCount,
+      visibleLevelCount,
     }
   }
 

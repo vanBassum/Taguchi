@@ -1,4 +1,11 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -37,17 +44,21 @@ export function ParameterTableCard({
     <Card size="sm" className="w-full max-w-md">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm">Parameters</CardTitle>
+        <CardDescription className="text-xs">
+          Enter parameter names and level values in the table. Select a different array below to
+          change visible size while keeping existing data where possible.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-md border">
           <Table className="text-xs">
             <TableHeader className="bg-muted/40">
               <TableRow>
-                <TableHead className="h-auto border-r border-b px-2 py-1.5 font-medium"> </TableHead>
+                <TableHead className="h-auto min-w-[5.5rem] border-r border-b px-2 py-1.5 font-medium"></TableHead>
                 {Array.from({ length: levelCount }, (_, index) => (
                   <TableHead
                     key={`header-level-${index + 1}`}
-                    className="h-auto border-b px-2 py-1.5 font-medium [&:not(:last-child)]:border-r"
+                    className="h-auto min-w-12 border-b px-2 py-1.5 font-medium [&:not(:last-child)]:border-r"
                   >
                     {`Level ${index + 1}`}
                   </TableHead>
@@ -57,7 +68,7 @@ export function ParameterTableCard({
             <TableBody>
               {rows.map((row, rowIndex) => (
                 <TableRow key={row.id} className="hover:bg-muted/20">
-                  <TableCell className="border-r border-b p-1">
+                  <TableCell className="min-w-[5.5rem] border-r border-b p-1">
                     <Input
                       value={row.parameter}
                       onChange={(event) =>
@@ -74,7 +85,7 @@ export function ParameterTableCard({
                   {row.levels.map((levelValue, levelIndex) => (
                     <TableCell
                       key={`${row.id}-level-${levelIndex}`}
-                      className="border-b p-1 [&:not(:last-child)]:border-r"
+                      className="min-w-12 border-b p-1 [&:not(:last-child)]:border-r"
                     >
                       <Input
                         value={levelValue}

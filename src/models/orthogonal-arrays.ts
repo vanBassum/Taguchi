@@ -29,7 +29,7 @@ export function createRowsFromOrthogonalArray(
   )
 
   return Array.from({ length: parameterCount }, (_, parameterIndex) => {
-    const fallbackParameterName = `Parameter ${parameterIndex + 1}`
+    const fallbackParameterName = `Param ${parameterIndex + 1}`
     const sourceLevelValues = options?.levelValuesByParameter?.[parameterIndex] ?? []
 
     return {

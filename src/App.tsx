@@ -48,11 +48,11 @@ export function App() {
             if (!definition) {
                 return
             }
-
-            const rows = createRowsFromOrthogonalArray(definition)
+            const parameterCount = definition.runs[0]?.length ?? 1
+            const levelCount = Math.max(1, ...definition.runs.flat())
 
             setSelectedDefinitionId(definition.id)
-            dispatchEvent({ type: "tableReset", rows })
+            dispatchEvent({ type: "definitionShapeChanged", parameterCount, levelCount })
             return
         }
 
