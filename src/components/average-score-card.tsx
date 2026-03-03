@@ -9,6 +9,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow } from "@/models/parameter-table-model"
+import { type CSSProperties } from "react"
 
 type AverageScoreCardProps = {
   definition: OrthogonalArrayDefinition
@@ -18,12 +19,12 @@ type AverageScoreCardProps = {
 
 const scoreFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 })
 
-function getAverageScore(
+function getAverageScoreValue(
   definition: OrthogonalArrayDefinition,
   parameterIndex: number,
   levelIndex: number,
   scores: string[]
-): string {
+): number | null {
   let sum = 0
   let count = 0
 
@@ -42,11 +43,41 @@ function getAverageScore(
     count += 1
   })
 
-  return count > 0 ? scoreFormatter.format(sum / count) : "—"
+  return count > 0 ? sum / count : null
+}
+
+function getHeatmapCellStyle(
+  value: number | null,
+  minScore: number,
+  maxScore: number
+): CSSProperties | undefined {
+  if (value === null || !Number.isFinite(minScore) || !Number.isFinite(maxScore) || minScore === maxScore) {
+    return undefined
+  }
+
+  const intensity = (value - minScore) / (maxScore - minScore)
+  const clampedIntensity = Math.min(Math.max(intensity, 0), 1)
+  const coolColor = "color-mix(in oklch, var(--chart-1) 72%, var(--chart-2))"
+  const warmColor = "var(--destructive)"
+  const paletteColor = `color-mix(in oklch, ${warmColor} ${(clampedIntensity * 100).toFixed(1)}%, ${coolColor})`
+  const pastelPalette = `color-mix(in oklch, ${paletteColor} 56%, var(--card))`
+  const paletteMix = 26 + clampedIntensity * 24
+
+  return {
+    backgroundColor: `color-mix(in oklch, ${pastelPalette} ${paletteMix.toFixed(1)}%, var(--card))`,
+  }
 }
 
 export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardProps) {
   const levelCount = rows[0]?.levels.length ?? 0
+  const averageScores = rows.map((_, parameterIndex) =>
+    Array.from({ length: levelCount }, (_, levelIndex) =>
+      getAverageScoreValue(definition, parameterIndex, levelIndex, scores)
+    )
+  )
+  const numericAverageScores = averageScores.flat().filter((score): score is number => score !== null)
+  const minAverageScore = Math.min(...numericAverageScores)
+  const maxAverageScore = Math.max(...numericAverageScores)
 
   return (
     <Card className="w-full">
@@ -78,14 +109,19 @@ export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardP
                   <TableCell className="min-w-[5.5rem] border-r">
                     {row.parameter || `Param ${parameterIndex + 1}`}
                   </TableCell>
-                  {Array.from({ length: levelCount }, (_, levelIndex) => (
-                    <TableCell
-                      key={`${row.id}-average-level-${levelIndex + 1}`}
-                      className="min-w-12 [&:not(:last-child)]:border-r"
-                    >
-                      {getAverageScore(definition, parameterIndex, levelIndex, scores)}
-                    </TableCell>
-                  ))}
+                  {Array.from({ length: levelCount }, (_, levelIndex) => {
+                    const averageScore = averageScores[parameterIndex]?.[levelIndex] ?? null
+
+                    return (
+                      <TableCell
+                        key={`${row.id}-average-level-${levelIndex + 1}`}
+                        className="min-w-12 [&:not(:last-child)]:border-r"
+                        style={getHeatmapCellStyle(averageScore, minAverageScore, maxAverageScore)}
+                      >
+                        {averageScore === null ? "—" : scoreFormatter.format(averageScore)}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))}
             </TableBody>
