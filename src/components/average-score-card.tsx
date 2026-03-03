@@ -7,9 +7,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow } from "@/models/parameter-table-model"
-import { type CSSProperties } from "react"
+import { type CSSProperties, useState } from "react"
 
 type AverageScoreCardProps = {
   definition: OrthogonalArrayDefinition
@@ -19,11 +20,14 @@ type AverageScoreCardProps = {
 
 const scoreFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 })
 
-function getAverageScoreValue(
+type ScoreMetric = "average" | "sum"
+
+function getScoreValue(
   definition: OrthogonalArrayDefinition,
   parameterIndex: number,
   levelIndex: number,
-  scores: string[]
+  scores: string[],
+  metric: ScoreMetric
 ): number | null {
   let sum = 0
   let count = 0
@@ -43,7 +47,11 @@ function getAverageScoreValue(
     count += 1
   })
 
-  return count > 0 ? sum / count : null
+  if (count === 0) {
+    return null
+  }
+
+  return metric === "sum" ? sum : sum / count
 }
 
 function getHeatmapCellStyle(
@@ -69,23 +77,49 @@ function getHeatmapCellStyle(
 }
 
 export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardProps) {
+  const [metric, setMetric] = useState<ScoreMetric>("average")
   const levelCount = rows[0]?.levels.length ?? 0
-  const averageScores = rows.map((_, parameterIndex) =>
+  const scoreValues = rows.map((_, parameterIndex) =>
     Array.from({ length: levelCount }, (_, levelIndex) =>
-      getAverageScoreValue(definition, parameterIndex, levelIndex, scores)
+      getScoreValue(definition, parameterIndex, levelIndex, scores, metric)
     )
   )
-  const numericAverageScores = averageScores.flat().filter((score): score is number => score !== null)
-  const minAverageScore = Math.min(...numericAverageScores)
-  const maxAverageScore = Math.max(...numericAverageScores)
+  const numericScores = scoreValues.flat().filter((score): score is number => score !== null)
+  const minScore = Math.min(...numericScores)
+  const maxScore = Math.max(...numericScores)
+  const cardTitle = metric === "sum" ? "Sum Score by Level" : "Average Score by Level"
+  const cardDescription =
+    metric === "sum"
+      ? "Each cell shows the total run score for that parameter at the selected level."
+      : "Each cell shows the mean run score for that parameter at the selected level."
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-1">
-        <CardTitle className="text-sm">Average Score by Level</CardTitle>
-        <CardDescription className="text-xs">
-          Each cell shows the mean run score for that parameter at the selected level.
-        </CardDescription>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm">{cardTitle}</CardTitle>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={metric === "average" ? "default" : "outline"}
+              className="h-7 px-2 text-xs"
+              onClick={() => setMetric("average")}
+            >
+              Average
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={metric === "sum" ? "default" : "outline"}
+              className="h-7 px-2 text-xs"
+              onClick={() => setMetric("sum")}
+            >
+              Sum
+            </Button>
+          </div>
+        </div>
+        <CardDescription className="text-xs">{cardDescription}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-md border">
@@ -110,15 +144,15 @@ export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardP
                     {row.parameter || `Param ${parameterIndex + 1}`}
                   </TableCell>
                   {Array.from({ length: levelCount }, (_, levelIndex) => {
-                    const averageScore = averageScores[parameterIndex]?.[levelIndex] ?? null
+                    const scoreValue = scoreValues[parameterIndex]?.[levelIndex] ?? null
 
                     return (
                       <TableCell
                         key={`${row.id}-average-level-${levelIndex + 1}`}
                         className="min-w-12 [&:not(:last-child)]:border-r"
-                        style={getHeatmapCellStyle(averageScore, minAverageScore, maxAverageScore)}
+                        style={getHeatmapCellStyle(scoreValue, minScore, maxScore)}
                       >
-                        {averageScore === null ? "—" : scoreFormatter.format(averageScore)}
+                        {scoreValue === null ? "—" : scoreFormatter.format(scoreValue)}
                       </TableCell>
                     )
                   })}
