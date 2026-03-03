@@ -1,4 +1,5 @@
 import { AverageScoreCard } from "@/components/average-score-card"
+import { ExportRunsCard } from "@/components/export-runs-card"
 import { ParameterTableCard } from "@/components/parameter-table-card"
 import { PresetSwitchCard } from "@/components/preset-switch-card"
 import { RunTableCard } from "@/components/run-table-card"
@@ -50,6 +51,11 @@ export function App() {
                         rows={visibleRows}
                         scores={runScores}
                         onScoreChanged={handleScoreChanged}
+                    />
+                    <ExportRunsCard
+                        definition={selectedDefinition}
+                        rows={visibleRows}
+                        scores={runScores}
                     />
                 </div>
             </div>
