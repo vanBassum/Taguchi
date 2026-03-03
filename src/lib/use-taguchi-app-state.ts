@@ -201,6 +201,19 @@ export function useTaguchiAppState() {
     })
   }
 
+  const handleClearParameterValues = () => {
+    const rows = visibleRows.map((row) => ({
+      ...row,
+      levels: row.levels.map(() => ""),
+    }))
+
+    dispatchEvent({ type: "tableReset", rows })
+  }
+
+  const handleClearRunScores = () => {
+    setRunScores((previousScores) => previousScores.map(() => ""))
+  }
+
   const handlePresetSelected = (name: string) => {
     if (selectedPresetName === name) {
       return
@@ -249,6 +262,23 @@ export function useTaguchiAppState() {
 
   const handleCreatePreset = () => {
     const nextName = createRandomPresetName(presets)
+    const nextId = createPresetGuid()
+
+    setPresets((previousPresets) => [
+      ...previousPresets,
+      {
+        id: nextId,
+        name: nextName,
+        state: { ...snapshot, n: nextName, g: nextId, i: undefined },
+        isImportedFromUrl: false,
+      },
+    ])
+    setSelectedPresetName(nextName)
+  }
+
+  const handleDuplicatePreset = () => {
+    const baseName = selectedPresetName ? `${selectedPresetName} Copy` : "New project Copy"
+    const nextName = getUniquePresetName(presets, baseName)
     const nextId = createPresetGuid()
 
     setPresets((previousPresets) => [
@@ -362,9 +392,12 @@ export function useTaguchiAppState() {
     hasPendingImportConflict: Boolean(pendingImportConflict),
     handleEvent,
     handleScoreChanged,
+    handleClearParameterValues,
+    handleClearRunScores,
     handlePresetSelected,
     handlePresetRenamed,
     handleCreatePreset,
+    handleDuplicatePreset,
     handleSaveSelectedPreset,
     handleDeletePreset,
     handleOverwriteImportedProject,

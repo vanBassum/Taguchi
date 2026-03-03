@@ -33,6 +33,7 @@ export function PresetSwitchCard() {
     handlePresetSelected,
     handlePresetRenamed,
     handleCreatePreset,
+    handleDuplicatePreset,
     handleSaveSelectedPreset,
     handleDeletePreset,
     getShareUrl,
@@ -88,16 +89,16 @@ export function PresetSwitchCard() {
   return (
     <Card className="w-full">
       <CardHeader className="pb-1">
-        <CardTitle className="text-sm">Presets</CardTitle>
+        <CardTitle className="text-sm">Projects</CardTitle>
         <CardDescription className="text-xs">
-          Click to open a preset, double-click its name to rename, and create new presets quickly.
+          Click to open a project, double-click its name to rename, and create new projects quickly.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-2">
         <div className="overflow-hidden rounded-md border">
-          <div role="listbox" aria-label="Saved presets" className="max-h-64 overflow-y-auto">
+          <div role="listbox" aria-label="Saved projects" className="max-h-64 overflow-y-auto">
             {presetNames.length === 0 ? (
-              <div className="px-2 py-2 text-xs text-muted-foreground">No presets saved yet.</div>
+              <div className="px-2 py-2 text-xs text-muted-foreground">No projects saved yet.</div>
             ) : (
               presetNames.map((name) => (
                 <div
@@ -122,7 +123,7 @@ export function PresetSwitchCard() {
                         }
                       }}
                       className="h-7"
-                      aria-label={`Preset name ${name}`}
+                      aria-label={`Project name ${name}`}
                       autoFocus
                     />
                   ) : (
@@ -151,7 +152,7 @@ export function PresetSwitchCard() {
                       variant="ghost"
                       size="sm"
                       className="ml-1 h-7 px-2"
-                      aria-label={`Save changes to preset ${name}`}
+                      aria-label={`Save changes to project ${name}`}
                       onClick={(event) => {
                         event.stopPropagation()
                         handleSaveSelectedPreset()
@@ -165,7 +166,7 @@ export function PresetSwitchCard() {
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2"
-                    aria-label={`Delete preset ${name}`}
+                    aria-label={`Delete project ${name}`}
                     onClick={(event) => {
                       event.stopPropagation()
                       if (editingPresetName === name) {
@@ -187,6 +188,9 @@ export function PresetSwitchCard() {
         <Button type="button" size="sm" onClick={handleCreatePreset}>
           New project
         </Button>
+        <Button type="button" size="sm" onClick={handleDuplicatePreset}>
+          Duplicate
+        </Button>
         <Button type="button" size="sm" onClick={handleCopyShareUrl}>
           {copyButtonLabel}
         </Button>
@@ -195,9 +199,9 @@ export function PresetSwitchCard() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete preset?</AlertDialogTitle>
+            <AlertDialogTitle>Delete project?</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{pendingDeleteName}" from saved presets.
+              Delete "{pendingDeleteName}" from saved projects.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

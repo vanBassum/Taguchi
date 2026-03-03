@@ -26,6 +26,8 @@ export function App() {
         hasPendingImportConflict,
         handleEvent,
         handleScoreChanged,
+        handleClearParameterValues,
+        handleClearRunScores,
         handleOverwriteImportedProject,
         handleKeepExistingProject,
     } = appState
@@ -40,6 +42,7 @@ export function App() {
                         rows={visibleRows}
                         definitions={ORTHOGONAL_ARRAYS}
                         selectedDefinitionId={selectedDefinitionId}
+                        onClearValues={handleClearParameterValues}
                         onEvent={handleEvent}
                     />
                     <AverageScoreCard definition={selectedDefinition} rows={visibleRows} scores={runScores} />
@@ -49,6 +52,7 @@ export function App() {
                         definition={selectedDefinition}
                         rows={visibleRows}
                         scores={runScores}
+                        onClearScores={handleClearRunScores}
                         onScoreChanged={handleScoreChanged}
                     />
                 </div>
