@@ -12,57 +12,55 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { useTaguchiAppStateContext } from "@/lib/taguchi-app-state-context"
 
-type PresetSwitchCardProps = {
-  presetName: string
-  onPresetNameChanged: (value: string) => void
-  presetNames: string[]
-  selectedPresetName: string
-  hasPendingChanges: boolean
-  onPresetSelected: (value: string) => void
-  onSavePreset: () => void
-  onSaveSelectedPreset: () => void
-  onDeletePreset: (name: string) => void
-}
-
-export function PresetSwitchCard({
-  presetName,
-  onPresetNameChanged,
-  presetNames,
-  selectedPresetName,
-  hasPendingChanges,
-  onPresetSelected,
-  onSavePreset,
-  onSaveSelectedPreset,
-  onDeletePreset,
-}: PresetSwitchCardProps) {
+export function PresetSwitchCard() {
+  const {
+    selectedPresetName,
+    presetNames,
+    importedPresetNames,
+    hasPendingChanges,
+    handlePresetSelected,
+    handlePresetRenamed,
+    handleCreatePreset,
+    handleSaveSelectedPreset,
+    handleDeletePreset,
+  } = useTaguchiAppStateContext()
   const [copyButtonLabel, setCopyButtonLabel] = useState("Copy share URL")
-  const [isOverwriteDialogOpen, setIsOverwriteDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [pendingDeleteName, setPendingDeleteName] = useState("")
+  const [editingPresetName, setEditingPresetName] = useState("")
+  const [editingDraft, setEditingDraft] = useState("")
 
-  const trimmedPresetName = presetName.trim()
-  const shouldConfirmOverwrite =
-    trimmedPresetName.length > 0 && presetNames.includes(trimmedPresetName)
-
-  const handleSaveClicked = () => {
-    if (!trimmedPresetName) {
-      return
-    }
-
-    if (shouldConfirmOverwrite) {
-      setIsOverwriteDialogOpen(true)
-      return
-    }
-
-    onSavePreset()
+  const startEditingPreset = (name: string) => {
+    handlePresetSelected(name)
+    setEditingPresetName(name)
+    setEditingDraft(name)
   }
 
-  const handleOverwriteConfirmed = () => {
-    onSavePreset()
-    setIsOverwriteDialogOpen(false)
+  const commitEditingPreset = () => {
+    if (!editingPresetName) {
+      return
+    }
+
+    handlePresetRenamed(editingPresetName, editingDraft)
+    setEditingPresetName("")
+    setEditingDraft("")
+  }
+
+  const cancelEditingPreset = () => {
+    setEditingPresetName("")
+    setEditingDraft("")
   }
 
   const handleDeleteConfirmed = () => {
@@ -70,7 +68,7 @@ export function PresetSwitchCard({
       return
     }
 
-    onDeletePreset(pendingDeleteName)
+    handleDeletePreset(pendingDeleteName)
     setPendingDeleteName("")
     setIsDeleteDialogOpen(false)
   }
@@ -91,21 +89,10 @@ export function PresetSwitchCard({
       <CardHeader className="pb-1">
         <CardTitle className="text-sm">Presets</CardTitle>
         <CardDescription className="text-xs">
-          Save the current table and scores with a name, then click a preset to switch.
+          Click to open a preset, double-click its name to rename, and create new presets quickly.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-2">
-        <div className="flex gap-2">
-          <Input
-            value={presetName}
-            onChange={(event) => onPresetNameChanged(event.target.value)}
-            placeholder="Preset name"
-            aria-label="Preset name"
-          />
-          <Button type="button" size="sm" onClick={handleSaveClicked}>
-            Save
-          </Button>
-        </div>
         <div className="overflow-hidden rounded-md border">
           <div role="listbox" aria-label="Saved presets" className="max-h-32 overflow-y-auto">
             {presetNames.length === 0 ? (
@@ -119,24 +106,54 @@ export function PresetSwitchCard({
                   className="flex items-center border-b px-2 py-1.5 text-sm last:border-b-0 data-[selected=true]:bg-muted"
                   data-selected={selectedPresetName === name}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onPresetSelected(name)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    {name}
-                    {selectedPresetName === name && hasPendingChanges ? " (pending)" : ""}
-                  </button>
+                  {editingPresetName === name ? (
+                    <Input
+                      value={editingDraft}
+                      onChange={(event) => setEditingDraft(event.target.value)}
+                      onBlur={commitEditingPreset}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          commitEditingPreset()
+                        }
+
+                        if (event.key === "Escape") {
+                          cancelEditingPreset()
+                        }
+                      }}
+                      className="h-7"
+                      aria-label={`Preset name ${name}`}
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handlePresetSelected(name)}
+                      onDoubleClick={() => startEditingPreset(name)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      {name}
+                    </button>
+                  )}
+                  {selectedPresetName === name && hasPendingChanges ? (
+                    <Badge variant="outline" className="ml-2">
+                      Pending
+                    </Badge>
+                  ) : null}
+                  {importedPresetNames.includes(name) ? (
+                    <Badge variant="secondary" className="ml-2">
+                      Imported URL
+                    </Badge>
+                  ) : null}
                   {selectedPresetName === name && hasPendingChanges ? (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 px-2"
+                      className="ml-1 h-7 px-2"
                       aria-label={`Save changes to preset ${name}`}
                       onClick={(event) => {
                         event.stopPropagation()
-                        onSaveSelectedPreset()
+                        handleSaveSelectedPreset()
                       }}
                     >
                       <SaveIcon className="size-4" />
@@ -150,6 +167,9 @@ export function PresetSwitchCard({
                     aria-label={`Delete preset ${name}`}
                     onClick={(event) => {
                       event.stopPropagation()
+                      if (editingPresetName === name) {
+                        cancelEditingPreset()
+                      }
                       setPendingDeleteName(name)
                       setIsDeleteDialogOpen(true)
                     }}
@@ -161,27 +181,15 @@ export function PresetSwitchCard({
             )}
           </div>
         </div>
-        <div>
-          <Button type="button" size="sm" onClick={handleCopyShareUrl}>
-            {copyButtonLabel}
-          </Button>
-        </div>
       </CardContent>
-
-      <AlertDialog open={isOverwriteDialogOpen} onOpenChange={setIsOverwriteDialogOpen}>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Overwrite preset?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A preset named "{trimmedPresetName}" already exists. Save will replace it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleOverwriteConfirmed}>Overwrite</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CardFooter className="gap-2">
+        <Button type="button" size="sm" onClick={handleCreatePreset}>
+          New project
+        </Button>
+        <Button type="button" size="sm" onClick={handleCopyShareUrl}>
+          {copyButtonLabel}
+        </Button>
+      </CardFooter>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent size="sm">
