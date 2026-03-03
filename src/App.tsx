@@ -1,9 +1,74 @@
+import { useReducer, useState } from "react"
+
+import { ParameterTableCard } from "@/components/parameter-table-card"
+import {
+    ORTHOGONAL_ARRAYS,
+    createRowsFromOrthogonalArray,
+    getOrthogonalArrayById,
+} from "@/models/orthogonal-arrays"
+import {
+    createInitialParameterTableState,
+    getVisibleParameterRows,
+    parameterTableReducer,
+    type ParameterTableEvent,
+} from "@/models/parameter-table-model"
+
+const defaultArray = getOrthogonalArrayById("L8_P4_2LEVEL")
+
+if (!defaultArray) {
+    throw new Error("Default orthogonal array is not defined.")
+}
+
+const initialParameters = createRowsFromOrthogonalArray(defaultArray, {
+    parameterCount: 4,
+    parameterNames: ["Length", "Width", "Weight", "Voltage"],
+    levelValuesByParameter: [
+        ["120 mm", "125 mm"],
+        ["78 mm", "80 mm"],
+        ["245 g", "250 g"],
+        ["4.9 V", "5.0 V"],
+    ],
+})
+
 export function App() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="font-medium">Hello World</div>
-    </div>
-  )
+    const [selectedDefinitionId, setSelectedDefinitionId] = useState(defaultArray!.id)
+
+    const [state, dispatchEvent] = useReducer(
+        parameterTableReducer,
+        initialParameters,
+        createInitialParameterTableState
+    )
+
+    const visibleRows = getVisibleParameterRows(state)
+
+    const handleEvent = (event: ParameterTableEvent) => {
+        if (event.type === "definitionSelected") {
+            const definition = getOrthogonalArrayById(event.definitionId)
+
+            if (!definition) {
+                return
+            }
+
+            const rows = createRowsFromOrthogonalArray(definition)
+
+            setSelectedDefinitionId(definition.id)
+            dispatchEvent({ type: "tableReset", rows })
+            return
+        }
+
+        dispatchEvent(event)
+    }
+
+    return (
+        <main className="flex min-h-screen items-center justify-center bg-background p-4">
+            <ParameterTableCard
+                rows={visibleRows}
+                definitions={ORTHOGONAL_ARRAYS}
+                selectedDefinitionId={selectedDefinitionId}
+                onEvent={handleEvent}
+            />
+        </main>
+    )
 }
 
 export default App
