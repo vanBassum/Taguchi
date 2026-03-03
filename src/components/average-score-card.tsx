@@ -1,12 +1,11 @@
 import {
-  AppTable,
-  AppTableBody,
-  AppTableCell,
-  AppTableContainer,
-  AppTableHead,
-  AppTableHeader,
-  AppTableRow,
-} from "@/components/app-table"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow } from "@/models/parameter-table-model"
@@ -58,40 +57,40 @@ export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardP
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AppTableContainer>
-          <AppTable>
-            <AppTableHeader>
-              <AppTableRow>
-                <AppTableHead className="min-w-[5.5rem] border-r"></AppTableHead>
+        <div className="overflow-hidden rounded-md border">
+          <Table className="table-compact">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[5.5rem] border-r"></TableHead>
                 {Array.from({ length: levelCount }, (_, levelIndex) => (
-                  <AppTableHead
+                  <TableHead
                     key={`average-level-header-${levelIndex + 1}`}
                     className="min-w-12 [&:not(:last-child)]:border-r"
                   >
                     {`Level ${levelIndex + 1}`}
-                  </AppTableHead>
+                  </TableHead>
                 ))}
-              </AppTableRow>
-            </AppTableHeader>
-            <AppTableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((row, parameterIndex) => (
-                <AppTableRow key={row.id}>
-                  <AppTableCell className="min-w-[5.5rem] border-r">
+                <TableRow key={row.id}>
+                  <TableCell className="min-w-[5.5rem] border-r">
                     {row.parameter || `Param ${parameterIndex + 1}`}
-                  </AppTableCell>
+                  </TableCell>
                   {Array.from({ length: levelCount }, (_, levelIndex) => (
-                    <AppTableCell
+                    <TableCell
                       key={`${row.id}-average-level-${levelIndex + 1}`}
                       className="min-w-12 [&:not(:last-child)]:border-r"
                     >
                       {getAverageScore(definition, parameterIndex, levelIndex, scores)}
-                    </AppTableCell>
+                    </TableCell>
                   ))}
-                </AppTableRow>
+                </TableRow>
               ))}
-            </AppTableBody>
-          </AppTable>
-        </AppTableContainer>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )

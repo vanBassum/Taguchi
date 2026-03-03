@@ -1,14 +1,4 @@
 import {
-  AppTable,
-  AppTableBody,
-  AppTableCell,
-  AppTableContainer,
-  AppTableHead,
-  AppTableHeader,
-  AppTableRow,
-  appTableInputClassName,
-} from "@/components/app-table"
-import {
   Card,
   CardContent,
   CardDescription,
@@ -17,6 +7,14 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Select,
   SelectContent,
@@ -52,25 +50,25 @@ export function ParameterTableCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AppTableContainer>
-          <AppTable>
-            <AppTableHeader>
-              <AppTableRow>
-                <AppTableHead className="min-w-[5.5rem] border-r"></AppTableHead>
+        <div className="overflow-hidden rounded-md border">
+          <Table className="table-compact">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[5.5rem] border-r"></TableHead>
                 {Array.from({ length: levelCount }, (_, index) => (
-                  <AppTableHead
+                  <TableHead
                     key={`header-level-${index + 1}`}
                     className="min-w-12 [&:not(:last-child)]:border-r"
                   >
                     {`Level ${index + 1}`}
-                  </AppTableHead>
+                  </TableHead>
                 ))}
-              </AppTableRow>
-            </AppTableHeader>
-            <AppTableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((row, rowIndex) => (
-                <AppTableRow key={row.id}>
-                  <AppTableCell className="min-w-[5.5rem] border-r">
+                <TableRow key={row.id}>
+                  <TableCell className="min-w-[5.5rem] border-r">
                     <Input
                       value={row.parameter}
                       onChange={(event) =>
@@ -80,12 +78,12 @@ export function ParameterTableCard({
                           value: event.target.value,
                         })
                       }
-                      className={appTableInputClassName}
+                      className="table-compact-input"
                       aria-label={`Parameter name ${rowIndex + 1}`}
                     />
-                  </AppTableCell>
+                  </TableCell>
                   {row.levels.map((levelValue, levelIndex) => (
-                    <AppTableCell
+                    <TableCell
                       key={`${row.id}-level-${levelIndex}`}
                       className="min-w-12 [&:not(:last-child)]:border-r"
                     >
@@ -99,16 +97,16 @@ export function ParameterTableCard({
                             value: event.target.value,
                           })
                         }
-                        className={appTableInputClassName}
+                        className="table-compact-input"
                         aria-label={`Level ${levelIndex + 1} value for parameter ${rowIndex + 1}`}
                       />
-                    </AppTableCell>
+                    </TableCell>
                   ))}
-                </AppTableRow>
+                </TableRow>
               ))}
-            </AppTableBody>
-          </AppTable>
-        </AppTableContainer>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
       <CardFooter>
         <Select

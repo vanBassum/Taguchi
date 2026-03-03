@@ -127,3 +127,29 @@
     @apply font-sans;
     }
 }
+
+@layer components {
+  .table-compact {
+    @apply text-xs;
+  }
+
+  .table-compact thead {
+    @apply bg-muted/40;
+  }
+
+  .table-compact tbody tr:hover {
+    @apply bg-muted/20;
+  }
+
+  .table-compact th {
+    @apply h-auto border-b px-2 py-1.5 font-medium;
+  }
+
+  .table-compact td {
+    @apply border-b p-1;
+  }
+
+  .table-compact-input {
+    @apply h-7 rounded-sm border-0 bg-transparent px-1.5 text-xs shadow-none focus-visible:ring-1;
+  }
+}

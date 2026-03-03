@@ -1,13 +1,11 @@
 import {
-  AppTable,
-  AppTableBody,
-  AppTableCell,
-  AppTableContainer,
-  AppTableHead,
-  AppTableHeader,
-  AppTableRow,
-  appTableInputClassName,
-} from "@/components/app-table"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
@@ -30,53 +28,53 @@ export function RunTableCard({ definition, rows, scores, onScoreChanged }: RunTa
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AppTableContainer>
-          <AppTable>
-            <AppTableHeader>
-              <AppTableRow>
-                <AppTableHead className="min-w-14 border-r">Run</AppTableHead>
+        <div className="overflow-hidden rounded-md border">
+          <Table className="table-compact">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-14 border-r">Run</TableHead>
                 {rows.map((row, parameterIndex) => (
-                  <AppTableHead
+                  <TableHead
                     key={`${row.id}-header`}
                     className="min-w-20 [&:not(:last-child)]:border-r"
                   >
                     {row.parameter || `Param ${parameterIndex + 1}`}
-                  </AppTableHead>
+                  </TableHead>
                 ))}
-                <AppTableHead className="min-w-24 border-l">Score</AppTableHead>
-              </AppTableRow>
-            </AppTableHeader>
-            <AppTableBody>
+                <TableHead className="min-w-24 border-l">Score</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {definition.runs.map((runLevels, runIndex) => (
-                <AppTableRow key={`run-${runIndex + 1}`}>
-                  <AppTableCell className="border-r text-muted-foreground">{runIndex + 1}</AppTableCell>
+                <TableRow key={`run-${runIndex + 1}`}>
+                  <TableCell className="border-r text-muted-foreground">{runIndex + 1}</TableCell>
                   {rows.map((row, parameterIndex) => {
                     const levelNumber = runLevels[parameterIndex]
                     const value = row.levels[levelNumber - 1] ?? ""
 
                     return (
-                      <AppTableCell
+                      <TableCell
                         key={`run-${runIndex + 1}-param-${parameterIndex + 1}`}
                         className="[&:not(:last-child)]:border-r"
                       >
                         {value}
-                      </AppTableCell>
+                      </TableCell>
                     )
                   })}
-                  <AppTableCell className="border-l">
+                  <TableCell className="border-l">
                     <Input
                       type="number"
                       value={scores[runIndex] ?? ""}
                       onChange={(event) => onScoreChanged(runIndex, event.target.value)}
-                      className={appTableInputClassName}
+                      className="table-compact-input"
                       aria-label={`Score for run ${runIndex + 1}`}
                     />
-                  </AppTableCell>
-                </AppTableRow>
+                  </TableCell>
+                </TableRow>
               ))}
-            </AppTableBody>
-          </AppTable>
-        </AppTableContainer>
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )
