@@ -1,4 +1,14 @@
 import {
+  AppTable,
+  AppTableBody,
+  AppTableCell,
+  AppTableContainer,
+  AppTableHead,
+  AppTableHeader,
+  AppTableRow,
+  appTableInputClassName,
+} from "@/components/app-table"
+import {
   Card,
   CardContent,
   CardDescription,
@@ -14,14 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow, type ParameterTableEvent } from "@/models/parameter-table-model"
 
@@ -41,7 +43,7 @@ export function ParameterTableCard({
   const levelCount = rows[0]?.levels.length ?? 0
 
   return (
-    <Card size="sm" className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader className="pb-1">
         <CardTitle className="text-sm">Parameters</CardTitle>
         <CardDescription className="text-xs">
@@ -50,25 +52,25 @@ export function ParameterTableCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden rounded-md border">
-          <Table className="text-xs">
-            <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead className="h-auto min-w-[5.5rem] border-r border-b px-2 py-1.5 font-medium"></TableHead>
+        <AppTableContainer>
+          <AppTable>
+            <AppTableHeader>
+              <AppTableRow>
+                <AppTableHead className="min-w-[5.5rem] border-r"></AppTableHead>
                 {Array.from({ length: levelCount }, (_, index) => (
-                  <TableHead
+                  <AppTableHead
                     key={`header-level-${index + 1}`}
-                    className="h-auto min-w-12 border-b px-2 py-1.5 font-medium [&:not(:last-child)]:border-r"
+                    className="min-w-12 [&:not(:last-child)]:border-r"
                   >
                     {`Level ${index + 1}`}
-                  </TableHead>
+                  </AppTableHead>
                 ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+              </AppTableRow>
+            </AppTableHeader>
+            <AppTableBody>
               {rows.map((row, rowIndex) => (
-                <TableRow key={row.id} className="hover:bg-muted/20">
-                  <TableCell className="min-w-[5.5rem] border-r border-b p-1">
+                <AppTableRow key={row.id}>
+                  <AppTableCell className="min-w-[5.5rem] border-r">
                     <Input
                       value={row.parameter}
                       onChange={(event) =>
@@ -78,14 +80,14 @@ export function ParameterTableCard({
                           value: event.target.value,
                         })
                       }
-                      className="h-7 rounded-sm border-0 bg-transparent px-1.5 text-xs shadow-none focus-visible:ring-1"
+                      className={appTableInputClassName}
                       aria-label={`Parameter name ${rowIndex + 1}`}
                     />
-                  </TableCell>
+                  </AppTableCell>
                   {row.levels.map((levelValue, levelIndex) => (
-                    <TableCell
+                    <AppTableCell
                       key={`${row.id}-level-${levelIndex}`}
-                      className="min-w-12 border-b p-1 [&:not(:last-child)]:border-r"
+                      className="min-w-12 [&:not(:last-child)]:border-r"
                     >
                       <Input
                         value={levelValue}
@@ -97,16 +99,16 @@ export function ParameterTableCard({
                             value: event.target.value,
                           })
                         }
-                        className="h-7 rounded-sm border-0 bg-transparent px-1.5 text-xs shadow-none focus-visible:ring-1"
+                        className={appTableInputClassName}
                         aria-label={`Level ${levelIndex + 1} value for parameter ${rowIndex + 1}`}
                       />
-                    </TableCell>
+                    </AppTableCell>
                   ))}
-                </TableRow>
+                </AppTableRow>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+            </AppTableBody>
+          </AppTable>
+        </AppTableContainer>
       </CardContent>
       <CardFooter>
         <Select
