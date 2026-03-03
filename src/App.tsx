@@ -33,7 +33,7 @@ export function App() {
     return (
         <TaguchiAppStateProvider value={appState}>
             <main className="min-h-screen bg-background p-4">
-            <div className="mx-auto grid w-full max-w-6xl items-start gap-4 lg:grid-cols-[26.4rem_1fr]">
+            <div className="mx-auto grid w-full max-w-6xl items-start gap-4 lg:grid-cols-[30rem_1fr]">
                 <div className="grid gap-4">
                     <PresetSwitchCard />
                     <ParameterTableCard

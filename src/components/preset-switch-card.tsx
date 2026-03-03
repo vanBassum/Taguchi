@@ -94,7 +94,7 @@ export function PresetSwitchCard() {
       </CardHeader>
       <CardContent className="grid gap-2">
         <div className="overflow-hidden rounded-md border">
-          <div role="listbox" aria-label="Saved presets" className="max-h-32 overflow-y-auto">
+          <div role="listbox" aria-label="Saved presets" className="max-h-64 overflow-y-auto">
             {presetNames.length === 0 ? (
               <div className="px-2 py-2 text-xs text-muted-foreground">No presets saved yet.</div>
             ) : (
