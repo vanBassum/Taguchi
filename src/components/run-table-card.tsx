@@ -23,21 +23,34 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow } from "@/models/parameter-table-model"
+import { Plus, Trash2 } from "lucide-react"
+
+type ScoreColumn = {
+  id: string
+  header: string
+  scores: string[]
+}
 
 type RunTableCardProps = {
   definition: OrthogonalArrayDefinition
   rows: ParameterRow[]
-  scores: string[]
+  scoreColumns: ScoreColumn[]
   onClearScores: () => void
-  onScoreChanged: (runIndex: number, value: string) => void
+  onScoreChanged: (columnIndex: number, runIndex: number, value: string) => void
+  onScoreColumnHeaderChanged: (columnIndex: number, value: string) => void
+  onAddScoreColumn: () => void
+  onRemoveScoreColumn: (columnIndex: number) => void
 }
 
 export function RunTableCard({
   definition,
   rows,
-  scores,
+  scoreColumns,
   onClearScores,
   onScoreChanged,
+  onScoreColumnHeaderChanged,
+  onAddScoreColumn,
+  onRemoveScoreColumn,
 }: RunTableCardProps) {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false)
 
@@ -47,15 +60,27 @@ export function RunTableCard({
         <CardHeader className="pb-1">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-sm">Runs</CardTitle>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 px-2 text-xs"
-              onClick={() => setIsClearDialogOpen(true)}
-            >
-              Clear
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={onAddScoreColumn}
+              >
+                <Plus />
+                Add score
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                onClick={() => setIsClearDialogOpen(true)}
+              >
+                Clear
+              </Button>
+            </div>
           </div>
           <CardDescription className="text-xs">
             Each row is a run from the selected orthogonal array. Enter a measured score for every run.
@@ -75,7 +100,31 @@ export function RunTableCard({
                       {row.parameter || `Param ${parameterIndex + 1}`}
                     </TableHead>
                   ))}
-                  <TableHead className="min-w-24 border-l">Score</TableHead>
+                  {scoreColumns.map((column, columnIndex) => (
+                    <TableHead key={column.id} className="min-w-36 border-l">
+                      <div className="flex items-center gap-1">
+                        <Input
+                          value={column.header}
+                          onChange={(event) =>
+                            onScoreColumnHeaderChanged(columnIndex, event.target.value)
+                          }
+                          className="h-7"
+                          aria-label={`Score column ${columnIndex + 1} header`}
+                          placeholder={`Score ${columnIndex + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={() => onRemoveScoreColumn(columnIndex)}
+                          disabled={scoreColumns.length <= 1}
+                          aria-label={`Remove score column ${columnIndex + 1}`}
+                        >
+                          <Trash2 />
+                        </Button>
+                      </div>
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -95,15 +144,19 @@ export function RunTableCard({
                         </TableCell>
                       )
                     })}
-                    <TableCell className="border-l">
-                      <Input
-                        type="number"
-                        value={scores[runIndex] ?? ""}
-                        onChange={(event) => onScoreChanged(runIndex, event.target.value)}
-                        className="table-compact-input"
-                        aria-label={`Score for run ${runIndex + 1}`}
-                      />
-                    </TableCell>
+                    {scoreColumns.map((column, columnIndex) => (
+                      <TableCell key={`${column.id}-run-${runIndex + 1}`} className="border-l">
+                        <Input
+                          type="number"
+                          value={column.scores[runIndex] ?? ""}
+                          onChange={(event) =>
+                            onScoreChanged(columnIndex, runIndex, event.target.value)
+                          }
+                          className="table-compact-input"
+                          aria-label={`${column.header || `Score ${columnIndex + 1}`} for run ${runIndex + 1}`}
+                        />
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))}
               </TableBody>

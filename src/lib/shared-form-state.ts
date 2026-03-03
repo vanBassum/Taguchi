@@ -3,11 +3,17 @@ export type SharedRow = {
   l: string[]
 }
 
+export type SharedScoreColumn = {
+  h: string
+  s: string[]
+}
+
 export type SharedFormState = {
   v: 1
   d: string
   rows: SharedRow[]
   scores: string[]
+  scoreColumns?: SharedScoreColumn[]
   n?: string
   g?: string
   i?: 1
@@ -21,6 +27,7 @@ function encodeSharedState(payload: SharedFormState): string {
     d: payload.d,
     rows: payload.rows,
     scores: payload.scores,
+    scoreColumns: payload.scoreColumns,
     n: payload.n,
     g: payload.g,
   }
@@ -162,7 +169,7 @@ export function readSharedStateFromUrl(): SharedFormState | null {
       parsed.v !== 1 ||
       typeof parsed.d !== "string" ||
       !Array.isArray(parsed.rows) ||
-      !Array.isArray(parsed.scores)
+      (!Array.isArray(parsed.scores) && !Array.isArray(parsed.scoreColumns))
     ) {
       return null
     }
@@ -174,13 +181,26 @@ export function readSharedStateFromUrl(): SharedFormState | null {
         l: row.l.map((level) => (typeof level === "string" ? level : "")),
       }))
 
-    const scores = parsed.scores.map((score) => (typeof score === "string" ? score : ""))
+    const scores = Array.isArray(parsed.scores)
+      ? parsed.scores.map((score) => (typeof score === "string" ? score : ""))
+      : []
+    const scoreColumns = Array.isArray(parsed.scoreColumns)
+      ? parsed.scoreColumns
+          .filter((column): column is SharedScoreColumn =>
+            Boolean(column && typeof column.h === "string" && Array.isArray(column.s))
+          )
+          .map((column) => ({
+            h: column.h,
+            s: column.s.map((score) => (typeof score === "string" ? score : "")),
+          }))
+      : undefined
 
     return {
       v: 1,
       d: parsed.d,
       rows,
       scores,
+      scoreColumns,
       n: typeof parsed.n === "string" ? parsed.n : undefined,
       g: typeof parsed.g === "string" ? parsed.g : undefined,
       i: undefined,

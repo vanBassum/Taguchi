@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useReducer, useState } from "react"
 
 import {
+  DEFAULT_SCORE_COLUMN_HEADER,
   PRESETS_STORAGE_KEY,
   areSharedStatesEqual,
   buildRowsFromShared,
@@ -8,6 +9,7 @@ import {
   createRandomPresetName,
   getUniquePresetName,
   getUniquePresetNameWithExclusion,
+  normalizeScoreColumns,
   normalizeScores,
   readPresetsFromStorage,
   type NamedPreset,
@@ -40,10 +42,40 @@ type ImportConflict = {
   incomingState: SharedFormState
 }
 
+type ScoreColumnState = {
+  id: string
+  header: string
+  scores: string[]
+}
+
+function createScoreColumnState(
+  scoreColumns: SharedFormState["scoreColumns"],
+  legacyScores: string[] | undefined,
+  runCount: number
+): ScoreColumnState[] {
+  return normalizeScoreColumns(scoreColumns, legacyScores, runCount).map((column) => ({
+    id: createPresetGuid(),
+    header: column.h,
+    scores: column.s,
+  }))
+}
+
+function toSharedScoreColumns(scoreColumns: ScoreColumnState[], runCount: number) {
+  return scoreColumns.map((column, columnIndex) => ({
+    h:
+      column.header.trim().length > 0
+        ? column.header
+        : columnIndex === 0
+          ? DEFAULT_SCORE_COLUMN_HEADER
+          : `${DEFAULT_SCORE_COLUMN_HEADER} ${columnIndex + 1}`,
+    s: normalizeScores(column.scores, runCount),
+  }))
+}
+
 export function useTaguchiAppState() {
   const [sharedState] = useState(() => readSharedStateFromUrl())
   const defaultRows = buildRowsFromShared(DEFAULT_ARRAY.id, undefined, DEFAULT_ARRAY.id)
-  const defaultScores = normalizeScores(undefined, DEFAULT_ARRAY.runs.length)
+  const defaultScoreColumns = normalizeScoreColumns(undefined, undefined, DEFAULT_ARRAY.runs.length)
   const defaultSnapshot: SharedFormState = {
     v: 1,
     d: DEFAULT_ARRAY.id,
@@ -51,7 +83,8 @@ export function useTaguchiAppState() {
       p: row.parameter,
       l: [...row.levels],
     })),
-    scores: defaultScores,
+    scores: defaultScoreColumns[0]?.s ?? normalizeScores(undefined, DEFAULT_ARRAY.runs.length),
+    scoreColumns: defaultScoreColumns,
     n: "New project",
   }
 
@@ -59,7 +92,11 @@ export function useTaguchiAppState() {
     sharedState?.d && getOrthogonalArrayById(sharedState.d) ? sharedState.d : DEFAULT_ARRAY.id
   const sharedDefinition = getOrthogonalArrayById(sharedDefinitionId) ?? DEFAULT_ARRAY
   const sharedRows = buildRowsFromShared(sharedDefinitionId, sharedState?.rows, DEFAULT_ARRAY.id)
-  const sharedScores = normalizeScores(sharedState?.scores, sharedDefinition.runs.length)
+  const sharedScoreColumns = normalizeScoreColumns(
+    sharedState?.scoreColumns,
+    sharedState?.scores,
+    sharedDefinition.runs.length
+  )
   const incomingSharedSnapshot: SharedFormState = {
     v: 1,
     d: sharedDefinitionId,
@@ -67,7 +104,8 @@ export function useTaguchiAppState() {
       p: row.parameter,
       l: [...row.levels],
     })),
-    scores: sharedScores,
+    scores: sharedScoreColumns[0]?.s ?? normalizeScores(undefined, sharedDefinition.runs.length),
+    scoreColumns: sharedScoreColumns,
     n: sharedState?.n,
     g: sharedState?.g,
   }
@@ -106,10 +144,14 @@ export function useTaguchiAppState() {
   const initialDefinitionId = initialSelectedPreset?.state.d ?? DEFAULT_ARRAY.id
   const initialRows = buildRowsFromShared(initialDefinitionId, initialSelectedPreset?.state.rows, DEFAULT_ARRAY.id)
   const initialRunCount = (getOrthogonalArrayById(initialDefinitionId) ?? DEFAULT_ARRAY).runs.length
-  const initialScores = normalizeScores(initialSelectedPreset?.state.scores, initialRunCount)
+  const initialScoreColumns = createScoreColumnState(
+    initialSelectedPreset?.state.scoreColumns,
+    initialSelectedPreset?.state.scores,
+    initialRunCount
+  )
 
   const [selectedDefinitionId, setSelectedDefinitionId] = useState(initialDefinitionId)
-  const [runScores, setRunScores] = useState<string[]>(initialScores)
+  const [runScoreColumns, setRunScoreColumns] = useState<ScoreColumnState[]>(initialScoreColumns)
   const [presets, setPresets] = useState<NamedPreset[]>(initialPresets)
   const [selectedPresetName, setSelectedPresetName] = useState<string>(initialSelectedPreset?.name ?? "")
   const [pendingImportConflict, setPendingImportConflict] = useState<ImportConflict | null>(
@@ -135,18 +177,23 @@ export function useTaguchiAppState() {
   )
 
   const snapshot = useMemo<SharedFormState>(
-    () => ({
-      v: 1,
-      d: selectedDefinitionId,
-      rows: visibleRows.map((row) => ({
-        p: row.parameter,
-        l: [...row.levels],
-      })),
-      scores: normalizeScores(runScores, selectedDefinition.runs.length),
-      n: selectedPresetName || undefined,
-      g: selectedPreset?.id,
-    }),
-    [runScores, selectedDefinition.runs.length, selectedDefinitionId, selectedPreset?.id, selectedPresetName, visibleRows]
+    () => {
+      const sharedScoreColumns = toSharedScoreColumns(runScoreColumns, selectedDefinition.runs.length)
+
+      return {
+        v: 1,
+        d: selectedDefinitionId,
+        rows: visibleRows.map((row) => ({
+          p: row.parameter,
+          l: [...row.levels],
+        })),
+        scores: sharedScoreColumns[0]?.s ?? normalizeScores(undefined, selectedDefinition.runs.length),
+        scoreColumns: sharedScoreColumns,
+        n: selectedPresetName || undefined,
+        g: selectedPreset?.id,
+      }
+    },
+    [runScoreColumns, selectedDefinition.runs.length, selectedDefinitionId, selectedPreset?.id, selectedPresetName, visibleRows]
   )
   const presetNames = useMemo(() => presets.map((preset) => preset.name), [presets])
   const importedPresetNames = useMemo(
@@ -161,7 +208,7 @@ export function useTaguchiAppState() {
 
     setSelectedDefinitionId(definition.id)
     dispatchEvent({ type: "tableReset", rows })
-    setRunScores(normalizeScores(payload.scores, definition.runs.length))
+    setRunScoreColumns(createScoreColumnState(payload.scoreColumns, payload.scores, definition.runs.length))
   }
 
   useLayoutEffect(() => {
@@ -183,8 +230,14 @@ export function useTaguchiAppState() {
       const levelCount = Math.max(1, ...definition.runs.flat())
 
       setSelectedDefinitionId(definition.id)
-      setRunScores((previousScores) =>
-        Array.from({ length: definition.runs.length }, (_, runIndex) => previousScores[runIndex] ?? "")
+      setRunScoreColumns((previousColumns) =>
+        previousColumns.map((column) => ({
+          ...column,
+          scores: Array.from(
+            { length: definition.runs.length },
+            (_, runIndex) => column.scores[runIndex] ?? ""
+          ),
+        }))
       )
       dispatchEvent({ type: "definitionShapeChanged", parameterCount, levelCount })
       return
@@ -193,11 +246,62 @@ export function useTaguchiAppState() {
     dispatchEvent(event)
   }
 
-  const handleScoreChanged = (runIndex: number, value: string) => {
-    setRunScores((previousScores) => {
-      const nextScores = [...previousScores]
+  const handleScoreChanged = (columnIndex: number, runIndex: number, value: string) => {
+    setRunScoreColumns((previousColumns) => {
+      const nextColumns = [...previousColumns]
+      const targetColumn = nextColumns[columnIndex]
+
+      if (!targetColumn) {
+        return previousColumns
+      }
+
+      const nextScores = [...targetColumn.scores]
       nextScores[runIndex] = value
-      return nextScores
+      nextColumns[columnIndex] = {
+        ...targetColumn,
+        scores: nextScores,
+      }
+
+      return nextColumns
+    })
+  }
+
+  const handleScoreColumnHeaderChanged = (columnIndex: number, value: string) => {
+    setRunScoreColumns((previousColumns) => {
+      const nextColumns = [...previousColumns]
+      const targetColumn = nextColumns[columnIndex]
+
+      if (!targetColumn) {
+        return previousColumns
+      }
+
+      nextColumns[columnIndex] = {
+        ...targetColumn,
+        header: value,
+      }
+
+      return nextColumns
+    })
+  }
+
+  const handleAddScoreColumn = () => {
+    setRunScoreColumns((previousColumns) => [
+      ...previousColumns,
+      {
+        id: createPresetGuid(),
+        header: `${DEFAULT_SCORE_COLUMN_HEADER} ${previousColumns.length + 1}`,
+        scores: Array.from({ length: selectedDefinition.runs.length }, () => ""),
+      },
+    ])
+  }
+
+  const handleRemoveScoreColumn = (columnIndex: number) => {
+    setRunScoreColumns((previousColumns) => {
+      if (previousColumns.length <= 1) {
+        return previousColumns
+      }
+
+      return previousColumns.filter((_, index) => index !== columnIndex)
     })
   }
 
@@ -211,7 +315,12 @@ export function useTaguchiAppState() {
   }
 
   const handleClearRunScores = () => {
-    setRunScores((previousScores) => previousScores.map(() => ""))
+    setRunScoreColumns((previousColumns) =>
+      previousColumns.map((column) => ({
+        ...column,
+        scores: column.scores.map(() => ""),
+      }))
+    )
   }
 
   const handlePresetSelected = (name: string) => {
@@ -384,7 +493,7 @@ export function useTaguchiAppState() {
     selectedDefinitionId,
     selectedDefinition,
     visibleRows,
-    runScores,
+    runScoreColumns,
     selectedPresetName,
     presetNames,
     importedPresetNames,
@@ -392,6 +501,9 @@ export function useTaguchiAppState() {
     hasPendingImportConflict: Boolean(pendingImportConflict),
     handleEvent,
     handleScoreChanged,
+    handleScoreColumnHeaderChanged,
+    handleAddScoreColumn,
+    handleRemoveScoreColumn,
     handleClearParameterValues,
     handleClearRunScores,
     handlePresetSelected,

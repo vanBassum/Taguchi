@@ -22,10 +22,13 @@ export function App() {
         selectedDefinitionId,
         selectedDefinition,
         visibleRows,
-        runScores,
+        runScoreColumns,
         hasPendingImportConflict,
         handleEvent,
         handleScoreChanged,
+        handleScoreColumnHeaderChanged,
+        handleAddScoreColumn,
+        handleRemoveScoreColumn,
         handleClearParameterValues,
         handleClearRunScores,
         handleOverwriteImportedProject,
@@ -45,15 +48,26 @@ export function App() {
                         onClearValues={handleClearParameterValues}
                         onEvent={handleEvent}
                     />
-                    <AverageScoreCard definition={selectedDefinition} rows={visibleRows} scores={runScores} />
+                    {runScoreColumns.map((scoreColumn, columnIndex) => (
+                        <AverageScoreCard
+                            key={scoreColumn.id}
+                            definition={selectedDefinition}
+                            rows={visibleRows}
+                            scores={scoreColumn.scores}
+                            scoreLabel={scoreColumn.header.trim() || `Score ${columnIndex + 1}`}
+                        />
+                    ))}
                 </div>
                 <div className="grid gap-4">
                     <RunTableCard
                         definition={selectedDefinition}
                         rows={visibleRows}
-                        scores={runScores}
+                        scoreColumns={runScoreColumns}
                         onClearScores={handleClearRunScores}
                         onScoreChanged={handleScoreChanged}
+                        onScoreColumnHeaderChanged={handleScoreColumnHeaderChanged}
+                        onAddScoreColumn={handleAddScoreColumn}
+                        onRemoveScoreColumn={handleRemoveScoreColumn}
                     />
                 </div>
             </div>

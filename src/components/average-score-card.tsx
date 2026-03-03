@@ -7,27 +7,24 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { type OrthogonalArrayDefinition } from "@/models/orthogonal-arrays"
 import { type ParameterRow } from "@/models/parameter-table-model"
-import { type CSSProperties, useState } from "react"
+import { type CSSProperties } from "react"
 
 type AverageScoreCardProps = {
   definition: OrthogonalArrayDefinition
   rows: ParameterRow[]
   scores: string[]
+  scoreLabel: string
 }
 
 const scoreFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 })
-
-type ScoreMetric = "average" | "sum"
 
 function getScoreValue(
   definition: OrthogonalArrayDefinition,
   parameterIndex: number,
   levelIndex: number,
-  scores: string[],
-  metric: ScoreMetric
+  scores: string[]
 ): number | null {
   let sum = 0
   let count = 0
@@ -51,7 +48,7 @@ function getScoreValue(
     return null
   }
 
-  return metric === "sum" ? sum : sum / count
+  return sum
 }
 
 function getHeatmapCellStyle(
@@ -76,50 +73,26 @@ function getHeatmapCellStyle(
   }
 }
 
-export function AverageScoreCard({ definition, rows, scores }: AverageScoreCardProps) {
-  const [metric, setMetric] = useState<ScoreMetric>("average")
+export function AverageScoreCard({ definition, rows, scores, scoreLabel }: AverageScoreCardProps) {
   const levelCount = rows[0]?.levels.length ?? 0
   const scoreValues = rows.map((_, parameterIndex) =>
     Array.from({ length: levelCount }, (_, levelIndex) =>
-      getScoreValue(definition, parameterIndex, levelIndex, scores, metric)
+      getScoreValue(definition, parameterIndex, levelIndex, scores)
     )
   )
   const numericScores = scoreValues.flat().filter((score): score is number => score !== null)
   const minScore = Math.min(...numericScores)
   const maxScore = Math.max(...numericScores)
-  const cardTitle = metric === "sum" ? "Sum Score by Level" : "Average Score by Level"
-  const cardDescription =
-    metric === "sum"
-      ? "Each cell shows the total run score for that parameter at the selected level."
-      : "Each cell shows the mean run score for that parameter at the selected level."
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-1">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm">{cardTitle}</CardTitle>
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              size="sm"
-              variant={metric === "average" ? "default" : "outline"}
-              className="h-7 px-2 text-xs"
-              onClick={() => setMetric("average")}
-            >
-              Average
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={metric === "sum" ? "default" : "outline"}
-              className="h-7 px-2 text-xs"
-              onClick={() => setMetric("sum")}
-            >
-              Sum
-            </Button>
-          </div>
+          <CardTitle className="text-sm">{`Sum Score by Level (${scoreLabel})`}</CardTitle>
         </div>
-        <CardDescription className="text-xs">{cardDescription}</CardDescription>
+        <CardDescription className="text-xs">
+          {`Each cell shows the total run score for that parameter at the selected level using ${scoreLabel}.`}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-hidden rounded-md border">

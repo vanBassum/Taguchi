@@ -1,7 +1,8 @@
-import { type SharedFormState, type SharedRow } from "@/lib/shared-form-state"
+import { type SharedFormState, type SharedRow, type SharedScoreColumn } from "@/lib/shared-form-state"
 import { createRowsFromOrthogonalArray, getOrthogonalArrayById } from "@/models/orthogonal-arrays"
 
 export const PRESETS_STORAGE_KEY = "taguchi-presets-v1"
+export const DEFAULT_SCORE_COLUMN_HEADER = "Score"
 
 export type NamedPreset = {
   id: string
@@ -13,15 +14,18 @@ export type NamedPreset = {
 const SHORT_ID_PATTERN = /^[A-Za-z0-9]{8}$/
 
 export function areSharedStatesEqual(left: SharedFormState, right: SharedFormState): boolean {
+  const leftRunCount = Math.max(left.scores.length, left.scoreColumns?.[0]?.s.length ?? 0)
+  const rightRunCount = Math.max(right.scores.length, right.scoreColumns?.[0]?.s.length ?? 0)
+
   const comparableLeft = {
     d: left.d,
     rows: left.rows,
-    scores: left.scores,
+    scoreColumns: normalizeScoreColumns(left.scoreColumns, left.scores, leftRunCount),
   }
   const comparableRight = {
     d: right.d,
     rows: right.rows,
-    scores: right.scores,
+    scoreColumns: normalizeScoreColumns(right.scoreColumns, right.scores, rightRunCount),
   }
 
   return JSON.stringify(comparableLeft) === JSON.stringify(comparableRight)
@@ -129,6 +133,30 @@ export function normalizeScores(scores: string[] | undefined, runCount: number):
   return Array.from({ length: runCount }, (_, runIndex) => scores?.[runIndex] ?? "")
 }
 
+export function normalizeScoreColumns(
+  scoreColumns: SharedScoreColumn[] | undefined,
+  legacyScores: string[] | undefined,
+  runCount: number
+): SharedScoreColumn[] {
+  if (Array.isArray(scoreColumns) && scoreColumns.length > 0) {
+    return scoreColumns.map((column, columnIndex) => ({
+      h: typeof column.h === "string" && column.h.trim().length > 0
+        ? column.h
+        : columnIndex === 0
+          ? DEFAULT_SCORE_COLUMN_HEADER
+          : `${DEFAULT_SCORE_COLUMN_HEADER} ${columnIndex + 1}`,
+      s: normalizeScores(column.s, runCount),
+    }))
+  }
+
+  return [
+    {
+      h: DEFAULT_SCORE_COLUMN_HEADER,
+      s: normalizeScores(legacyScores, runCount),
+    },
+  ]
+}
+
 export function readPresetsFromStorage(
   storageKey: string,
   fallbackDefinitionId: string
@@ -175,6 +203,16 @@ export function readPresetsFromStorage(
             scores: Array.isArray(item.state.scores)
               ? item.state.scores.map((score) => (typeof score === "string" ? score : ""))
               : [],
+            scoreColumns: Array.isArray(item.state.scoreColumns)
+              ? item.state.scoreColumns
+                  .filter((column): column is SharedScoreColumn =>
+                    Boolean(column && typeof column.h === "string" && Array.isArray(column.s))
+                  )
+                  .map((column) => ({
+                    h: column.h,
+                    s: column.s.map((score) => (typeof score === "string" ? score : "")),
+                  }))
+              : undefined,
             n: typeof item.state.n === "string" ? item.state.n : undefined,
             g: typeof item.state.g === "string" ? item.state.g : presetId,
             i: isImportedFromUrl ? 1 : undefined,
