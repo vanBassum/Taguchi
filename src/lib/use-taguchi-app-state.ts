@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useReducer, useState } from "react"
 
 import {
   PRESETS_STORAGE_KEY,
@@ -13,7 +13,12 @@ import {
   type NamedPreset,
   writePresetsToStorage,
 } from "@/lib/presets"
-import { type SharedFormState, readSharedStateFromUrl, writeSharedStateToUrl } from "@/lib/shared-form-state"
+import {
+  buildSharedStateUrl,
+  clearSharedStateFromUrl,
+  type SharedFormState,
+  readSharedStateFromUrl,
+} from "@/lib/shared-form-state"
 import { getOrthogonalArrayById } from "@/models/orthogonal-arrays"
 import {
   createInitialParameterTableState,
@@ -96,17 +101,7 @@ export function useTaguchiAppState() {
         isImportedFromUrl: true,
       }
     : null
-  const initialPresets = createdImportedPreset
-    ? [...basePresets, createdImportedPreset]
-    : basePresets.map((preset) =>
-        hasPastedUrlState && matchedByGuid && preset.id === matchedByGuid.id
-          ? {
-              ...preset,
-              isImportedFromUrl: true,
-              state: { ...preset.state, i: 1 as const },
-            }
-          : preset
-      )
+  const initialPresets = createdImportedPreset ? [...basePresets, createdImportedPreset] : basePresets
   const initialSelectedPreset = createdImportedPreset || matchedByGuid || initialPresets[0]
   const initialDefinitionId = initialSelectedPreset?.state.d ?? DEFAULT_ARRAY.id
   const initialRows = buildRowsFromShared(initialDefinitionId, initialSelectedPreset?.state.rows, DEFAULT_ARRAY.id)
@@ -169,9 +164,9 @@ export function useTaguchiAppState() {
     setRunScores(normalizeScores(payload.scores, definition.runs.length))
   }
 
-  useEffect(() => {
-    writeSharedStateToUrl(snapshot)
-  }, [snapshot])
+  useLayoutEffect(() => {
+    clearSharedStateFromUrl()
+  }, [])
 
   useEffect(() => {
     writePresetsToStorage(PRESETS_STORAGE_KEY, presets)
@@ -338,7 +333,7 @@ export function useTaguchiAppState() {
           ? {
               ...preset,
               name: nextName,
-              isImportedFromUrl: true,
+              isImportedFromUrl: false,
               state: nextState,
             }
           : preset
@@ -352,6 +347,8 @@ export function useTaguchiAppState() {
   const handleKeepExistingProject = () => {
     setPendingImportConflict(null)
   }
+
+  const getShareUrl = () => buildSharedStateUrl(snapshot)
 
   return {
     selectedDefinitionId,
@@ -372,5 +369,6 @@ export function useTaguchiAppState() {
     handleDeletePreset,
     handleOverwriteImportedProject,
     handleKeepExistingProject,
+    getShareUrl,
   }
 }

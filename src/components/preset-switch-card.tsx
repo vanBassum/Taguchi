@@ -35,6 +35,7 @@ export function PresetSwitchCard() {
     handleCreatePreset,
     handleSaveSelectedPreset,
     handleDeletePreset,
+    getShareUrl,
   } = useTaguchiAppStateContext()
   const [copyButtonLabel, setCopyButtonLabel] = useState("Copy share URL")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -75,7 +76,7 @@ export function PresetSwitchCard() {
 
   const handleCopyShareUrl = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(getShareUrl())
       setCopyButtonLabel("Copied")
       window.setTimeout(() => setCopyButtonLabel("Copy share URL"), 1500)
     } catch {
@@ -141,7 +142,7 @@ export function PresetSwitchCard() {
                   ) : null}
                   {importedPresetNames.includes(name) ? (
                     <Badge variant="secondary" className="ml-2">
-                      Imported URL
+                      Imported
                     </Badge>
                   ) : null}
                   {selectedPresetName === name && hasPendingChanges ? (

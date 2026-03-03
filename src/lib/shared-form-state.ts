@@ -15,6 +15,24 @@ export type SharedFormState = {
 
 const SHARED_STATE_PARAM = "s"
 
+function encodeSharedState(payload: SharedFormState): string {
+  const encodedPayload: SharedFormState = {
+    v: payload.v,
+    d: payload.d,
+    rows: payload.rows,
+    scores: payload.scores,
+    n: payload.n,
+    g: payload.g,
+  }
+  const json = JSON.stringify(encodedPayload)
+  const jsonBytes = new TextEncoder().encode(json)
+  const compressedBytes = compressLzw(json)
+
+  return compressedBytes && compressedBytes.length < jsonBytes.length
+    ? `l${encodeBase64Url(compressedBytes)}`
+    : `j${encodeBase64Url(jsonBytes)}`
+}
+
 function encodeBase64Url(bytes: Uint8Array): string {
   let binary = ""
 
@@ -173,21 +191,7 @@ export function readSharedStateFromUrl(): SharedFormState | null {
 }
 
 export function writeSharedStateToUrl(payload: SharedFormState) {
-  const encodedPayload: SharedFormState = {
-    v: payload.v,
-    d: payload.d,
-    rows: payload.rows,
-    scores: payload.scores,
-    n: payload.n,
-    g: payload.g,
-  }
-  const json = JSON.stringify(encodedPayload)
-  const jsonBytes = new TextEncoder().encode(json)
-  const compressedBytes = compressLzw(json)
-  const encoded =
-    compressedBytes && compressedBytes.length < jsonBytes.length
-      ? `l${encodeBase64Url(compressedBytes)}`
-      : `j${encodeBase64Url(jsonBytes)}`
+  const encoded = encodeSharedState(payload)
   const url = new URL(window.location.href)
 
   if (url.searchParams.get(SHARED_STATE_PARAM) === encoded) {
@@ -197,4 +201,22 @@ export function writeSharedStateToUrl(payload: SharedFormState) {
   url.searchParams.set(SHARED_STATE_PARAM, encoded)
 
   window.history.replaceState(null, "", url)
+}
+
+export function buildSharedStateUrl(payload: SharedFormState): string {
+  const url = new URL(`${window.location.origin}${window.location.pathname}`)
+
+  url.searchParams.set(SHARED_STATE_PARAM, encodeSharedState(payload))
+
+  return url.toString()
+}
+
+export function clearSharedStateFromUrl() {
+  const url = new URL(window.location.href)
+
+  if (!url.searchParams.has(SHARED_STATE_PARAM)) {
+    return
+  }
+
+  window.history.replaceState(null, "", `${url.origin}${url.pathname}`)
 }
